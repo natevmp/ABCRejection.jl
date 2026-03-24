@@ -1,9 +1,19 @@
 name = "ABCRejection"
 uuid = "1e8f6a0c-d50d-416e-aae2-648972eea77c"
-authors = ["Nathaniel V. Mon Pere"]
 version = "1.0.0-DEV"
+authors = ["Nathaniel V. Mon Pere"]
+
+[deps]
+Distances = "b4f34e82-e78d-54a5-968a-f98e89d6e8f7"
+Distributions = "31c24e10-a181-5473-b8eb-7969acd0382f"
+Random = "9a3f8284-a2c9-5f02-9a11-845980a1fd5c"
+Statistics = "10745b16-79ce-11e8-11f9-7d13ad32a3b2"
 
 [compat]
+Distances = "0.10.12"
+Distributions = "0.25.123"
+Random = "1.11.0"
+Statistics = "1.11.1"
 julia = "1.6.7"
 
 [extras]
