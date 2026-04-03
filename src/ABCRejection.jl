@@ -9,9 +9,20 @@ struct Particle{T}
     simResults::T
 end
 
-function runABCParticles(runModelSim::Function, params_tid::Vector{<:NamedTuple}, nParticles::Integer, ctrlParams::Union{Dict,NamedTuple}; verbose::Bool=false, randParams::Bool=true)
-    particle_tid = Vector{Particle}(undef, nParticles)
-    for tid in 1:nParticles
+"""
+    runABCParticles(
+        runModelSim::Function,
+        params_tid::Vector{<:NamedTuple},
+        ctrlParams::Union{Dict,NamedTuple}=NamedTuple();
+        verbose::Bool=false,
+        randParams::Bool=true
+    )
+
+Create multiple particles for the parameters in `params_tid`
+"""
+function runABCParticles(runModelSim::Function, params_tid::Vector{<:NamedTuple}, ctrlParams::Union{Dict,NamedTuple}=NamedTuple(); verbose::Bool=false, randParams::Bool=false)
+    particle_tid = Vector{Particle}(undef, length(params_tid))
+    for tid in 1:length(params_tid)
         particle_tid[tid] = runParticle(runModelSim, params_tid[tid], ctrlParams; verbose, randParams)
     end
     return particle_tid
@@ -24,6 +35,10 @@ function runABCParticles(runModelSim::Function, priorDists_pid::NamedTuple, nPar
     end
     return particle_tid
 end
+
+# function drawParams()
+    
+# end
 
 function runParticle(runModelSim::Function, pDist_pid::NamedTuple, ctrlParams::Union{Dict, NamedTuple}; verbose::Bool=false, randParams::Bool=true)
     pVal_pid = 
@@ -149,8 +164,8 @@ function measureABCParticles(compareDataVSimError::Function, particle_tid::Vecto
     dists1 = compareDataVSimError(dataMetrics, particle_tid[1].simResults)
     dists_tid = Vector{typeof(dists1)}(undef, length(particle_tid))
     dists_tid[1] = dists1
-    for (tid,particle) in enumerate(@view particle_tid[2:end])
-        dists_tid[tid] = compareDataVSimError(dataMetrics, particle.simResults)
+    for tid in 2:length(particle_tid)
+        dists_tid[tid] = compareDataVSimError(dataMetrics, particle_tid[tid].simResults)
     end
     return dists_tid
 end
@@ -159,7 +174,7 @@ function runABC(runModelSim::Function, compareDataVSim::Function, priorDists_pid
 
     particle_tid = runABCParticles(runModelSim, priorDists_pid, ctrlParams, nParticles)
 
-    accepted_tid = testABCParticles(compareDataVSim, particles_tid, dataMetrics, ctrlParams[:thresholds])
+    accepted_tid = testABCParticles(compareDataVSim, particle_tid, dataMetrics, ctrlParams[:thresholds])
 
     return particle_tid, accepted_tid
 end
