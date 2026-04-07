@@ -27,6 +27,16 @@ function runABCParticles(runModelSim::Function, params_tid::Vector{<:NamedTuple}
     return particle_tid
 end
 
+"""
+    runABCParticles(
+        runModelSim::Function,
+        params_tid_Pid::NamedTuple{Names, <:Tuple{Vararg{AbstractVector}}} where Names,
+        ctrlParams::Union{Dict,NamedTuple}=(;);
+        verbose::Bool=false,
+    )
+
+Create multiple particles for the parameters in `params_tid_Pid`, which take the form of a `NamedTuple` of `Vector`s.
+"""
 function runABCParticles(runModelSim::Function, params_tid_Pid::NamedTuple{Names, <:Tuple{Vararg{AbstractVector}}} where Names, ctrlParams::Union{Dict,NamedTuple}=(;); verbose::Bool=false)
     nParticles = length(first(params_tid_Pid))
     for (pName, params_tid) in pairs(params_tid_Pid)
@@ -45,11 +55,22 @@ function runABCParticles(runModelSim::Function, params_tid_Pid::NamedTuple{Names
 end
 
 function drawParams(priorDist_pid::Union{NamedTuple,Dict}, nParticles::Integer)
-    _pNames = keys(priorDist_pid) |> Tuple
-    params_tid_Pid = NamedTuple{_pNames}(Tuple(rand(dist, nParticles) for dist in values(priorDist_pid)))
+    pNames = keys(priorDist_pid) |> Tuple
+    params_tid_Pid = NamedTuple{pNames}(Tuple(rand(dist, nParticles) for dist in values(priorDist_pid)))
     return params_tid_Pid
 end
 
+"""
+    runABCParticles(
+        runModelSim::Function,
+        priorDist_pid::Union{NamedTuple,Dict},
+        nParticles::Integer,
+        ctrlParams::Union{Dict,NamedTuple}=(;);
+        verbose::Bool=false,
+    )
+
+Create multiple particles by first drawing `nParticles` parameters from the prior distributions in `priorDist_pid`.
+"""
 function runABCParticles(runModelSim::Function, priorDist_pid::Union{NamedTuple,Dict}, nParticles::Integer, ctrlParams::Union{Dict,NamedTuple}=(;); verbose::Bool=false)
     params_tid_Pid = drawParams(priorDist_pid, nParticles)
     runABCParticles(runModelSim, params_tid_Pid, ctrlParams; verbose)
