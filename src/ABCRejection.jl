@@ -2,7 +2,7 @@ module ABCRejection
 
 using Random, Distributions, Distances, Statistics
 
-export runABCParticles, runParticle, testABCParticles, testParticle
+export runABCParticles, runParticle, rankParticles, testABCParticles, testParticle
 
 struct Particle{T}
     paramSet::NamedTuple
@@ -17,7 +17,7 @@ end
         verbose::Bool=false,
     )
 
-Create multiple particles for the parameters in `params_tid`
+Create multiple particles for the parameters in `params_tid::Vector{<:NamedTuple}`.
 """
 function runABCParticles(runModelSim::Function, params_tid::Vector{<:NamedTuple}, ctrlParams::Union{Dict,NamedTuple}=(;); verbose::Bool=false)
     particle_tid = Vector{Particle}(undef, length(params_tid))
@@ -84,7 +84,7 @@ function getParticleDistancesPerMetric(
 end
 
 """
-    rankABCParticlesJointQuantiles(
+    rankParticles(
         distDataVSim::Function,
         particle_tid::Vector,
         dataMetrics;
@@ -97,7 +97,7 @@ Rank the particles according to their distance from the data in ascending order 
 `distDataVSim(particle.simResults, dataMetrics)`: Function to measure the distance between a single particle and the data. It must take two arguments, the first being the the `simResults` saved in each `particle` and the second the being all metrics of the data to which the particle is being compared.
 
 """
-function rankABCParticlesJointQuantiles(
+function rankParticles(
         distDataVSim::Function,
         particle_tid::Vector,
         dataMetrics::Tuple;
