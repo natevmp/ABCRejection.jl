@@ -13,13 +13,13 @@ end
     runABCParticles(
         runModelSim::Function,
         params_tid::Vector{<:NamedTuple},
-        ctrlParams::Union{Dict,NamedTuple}=NamedTuple();
+        ctrlParams::Union{Tuple,Dict,NamedTuple}=NamedTuple();
         verbose::Bool=false,
     )
 
 Create multiple particles for the parameters in `params_tid::Vector{<:NamedTuple}`.
 """
-function runABCParticles(runModelSim::Function, params_tid::Vector{<:NamedTuple}, ctrlParams::Union{Dict,NamedTuple}=(;); verbose::Bool=false)
+function runABCParticles(runModelSim::Function, params_tid::Vector{<:NamedTuple}, ctrlParams::Union{Tuple,Dict,NamedTuple}=(;); verbose::Bool=false)
     particle_tid = Vector{Particle}(undef, length(params_tid))
     for tid in 1:length(params_tid)
         particle_tid[tid] = runParticle(runModelSim, params_tid[tid], ctrlParams; verbose)
@@ -31,13 +31,13 @@ end
     runABCParticles(
         runModelSim::Function,
         params_tid_Pid::NamedTuple{Names, <:Tuple{Vararg{AbstractVector}}} where Names,
-        ctrlParams::Union{Dict,NamedTuple}=(;);
+        ctrlParams::Union{Tuple,Dict,NamedTuple}=(;);
         verbose::Bool=false,
     )
 
 Create multiple particles for the parameters in `params_tid_Pid`, which take the form of a `NamedTuple` of `Vector`s.
 """
-function runABCParticles(runModelSim::Function, params_tid_Pid::NamedTuple{Names, <:Tuple{Vararg{AbstractVector}}} where Names, ctrlParams::Union{Dict,NamedTuple}=(;); verbose::Bool=false)
+function runABCParticles(runModelSim::Function, params_tid_Pid::NamedTuple{Names, <:Tuple{Vararg{AbstractVector}}} where Names, ctrlParams::Union{Tuple,Dict,NamedTuple}=(;); verbose::Bool=false)
     nParticles = length(first(params_tid_Pid))
     for (pName, params_tid) in pairs(params_tid_Pid)
         if length(params_tid) != nParticles
@@ -65,18 +65,18 @@ end
         runModelSim::Function,
         priorDist_pid::Union{NamedTuple,Dict},
         nParticles::Integer,
-        ctrlParams::Union{Dict,NamedTuple}=(;);
+        ctrlParams::Union{Tuple,Dict,NamedTuple}=(;);
         verbose::Bool=false,
     )
 
 Create multiple particles by first drawing `nParticles` parameters from the prior distributions in `priorDist_pid`.
 """
-function runABCParticles(runModelSim::Function, priorDist_pid::Union{NamedTuple,Dict}, nParticles::Integer, ctrlParams::Union{Dict,NamedTuple}=(;); verbose::Bool=false)
+function runABCParticles(runModelSim::Function, priorDist_pid::Union{NamedTuple,Dict}, nParticles::Integer, ctrlParams::Union{Tuple,Dict,NamedTuple}=(;); verbose::Bool=false)
     params_tid_Pid = drawParams(priorDist_pid, nParticles)
     runABCParticles(runModelSim, params_tid_Pid, ctrlParams; verbose)
 end
 
-function runParticle(runModelSim::Function, pVal_pid::NamedTuple, ctrlParams::Union{Dict, NamedTuple}; verbose::Bool=false)
+function runParticle(runModelSim::Function, pVal_pid::NamedTuple, ctrlParams::Union{Tuple, Dict, NamedTuple}; verbose::Bool=false)
     paramSet = pVal_pid # Use the passed NamedTuple directly
     simResults = runModelSim(paramSet, ctrlParams)
     if verbose
