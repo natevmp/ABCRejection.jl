@@ -13,16 +13,15 @@ end
     runABCParticles(
         runModelSim::Function,
         params_tid::Vector{<:NamedTuple},
-        ctrlParams::Union{Tuple,Dict,NamedTuple}=NamedTuple();
-        verbose::Bool=false,
+        ctrlParams::Union{Tuple,Dict,NamedTuple}=NamedTuple(),
     )
 
 Create multiple particles for the parameters in `params_tid::Vector{<:NamedTuple}`.
 """
-function runABCParticles(runModelSim::Function, params_tid::Vector{<:NamedTuple}, ctrlParams::Union{Tuple,Dict,NamedTuple}=(;); verbose::Bool=false)
+function runABCParticles(runModelSim::Function, params_tid::Vector{<:NamedTuple}, ctrlParams::Union{Tuple,Dict,NamedTuple}=(;))
     particle_tid = Vector{Particle}(undef, length(params_tid))
     for tid in 1:length(params_tid)
-        particle_tid[tid] = runParticle(runModelSim, params_tid[tid], ctrlParams; verbose)
+        particle_tid[tid] = runParticle(runModelSim, params_tid[tid], ctrlParams)
     end
     return particle_tid
 end
@@ -31,13 +30,12 @@ end
     runABCParticles(
         runModelSim::Function,
         params_tid_Pid::NamedTuple{Names, <:Tuple{Vararg{AbstractVector}}} where Names,
-        ctrlParams::Union{Tuple,Dict,NamedTuple}=(;);
-        verbose::Bool=false,
+        ctrlParams::Union{Tuple,Dict,NamedTuple}=(;),
     )
 
 Create multiple particles for the parameters in `params_tid_Pid`, which take the form of a `NamedTuple` of `Vector`s.
 """
-function runABCParticles(runModelSim::Function, params_tid_Pid::NamedTuple{Names, <:Tuple{Vararg{AbstractVector}}} where Names, ctrlParams::Union{Tuple,Dict,NamedTuple}=(;); verbose::Bool=false)
+function runABCParticles(runModelSim::Function, params_tid_Pid::NamedTuple{Names, <:Tuple{Vararg{AbstractVector}}} where Names, ctrlParams::Union{Tuple,Dict,NamedTuple}=(;))
     nParticles = length(first(params_tid_Pid))
     for (pName, params_tid) in pairs(params_tid_Pid)
         if length(params_tid) != nParticles
@@ -49,7 +47,7 @@ function runABCParticles(runModelSim::Function, params_tid_Pid::NamedTuple{Names
     pNames = keys(params_tid_Pid) |> Tuple
     for tid in eachindex(particle_tid)
         pVal_pid = NamedTuple{pNames}(Tuple(pVal_tid[tid] for pVal_tid in params_tid_Pid))
-        particle_tid[tid] = runParticle(runModelSim, pVal_pid, ctrlParams; verbose)
+        particle_tid[tid] = runParticle(runModelSim, pVal_pid, ctrlParams)
     end
     return particle_tid
 end
@@ -65,26 +63,20 @@ end
         runModelSim::Function,
         priorDist_pid::Union{NamedTuple,Dict},
         nParticles::Integer,
-        ctrlParams::Union{Tuple,Dict,NamedTuple}=(;);
-        verbose::Bool=false,
+        ctrlParams::Union{Tuple,Dict,NamedTuple}=(;),
     )
 
 Create multiple particles by first drawing `nParticles` parameters from the prior distributions in `priorDist_pid`.
 """
-function runABCParticles(runModelSim::Function, priorDist_pid::Union{NamedTuple,Dict}, nParticles::Integer, ctrlParams::Union{Tuple,Dict,NamedTuple}=(;); verbose::Bool=false)
+function runABCParticles(runModelSim::Function, priorDist_pid::Union{NamedTuple,Dict}, nParticles::Integer, ctrlParams::Union{Tuple,Dict,NamedTuple}=(;))
     params_tid_Pid = drawParams(priorDist_pid, nParticles)
-    runABCParticles(runModelSim, params_tid_Pid, ctrlParams; verbose)
+    runABCParticles(runModelSim, params_tid_Pid, ctrlParams)
 end
 
-function runParticle(runModelSim::Function, pVal_pid::NamedTuple, ctrlParams::Union{Tuple, Dict, NamedTuple}; verbose::Bool=false)
+function runParticle(runModelSim::Function, pVal_pid::NamedTuple, ctrlParams::Union{Tuple, Dict, NamedTuple})
     paramSet = pVal_pid # Use the passed NamedTuple directly
     simResults = runModelSim(paramSet, ctrlParams)
-    if verbose
-        println("parameter values of particle:")
-        for (i,pid) in enumerate(keys(pVal_pid))
-            println(string(pid)*": ", string(pVal_pid[i]))
-        end
-    end
+    @debug "Simulated particle" parameters=paramSet
     return Particle(
         paramSet,
         simResults
@@ -94,10 +86,12 @@ end
 function getParticleDistancesPerMetric(
         distDataVSim::Function,
         particle_tid::AbstractVector,
-        dataMetrics;
+        dataMetrics,
+        nMetrics::Int;
     )
-    nMetrics=length(dataMetrics)
+    # nMetrics=length(dataMetrics)
     distance_tid_mid = Array{Float64,2}(undef, length(particle_tid), nMetrics)
+    @debug "Computing particle distances" nMetrics
     for (tid, particle) in enumerate(particle_tid)
         distance_tid_mid[tid, :] .= distDataVSim(particle.simResults, dataMetrics) |> collect
     end
@@ -110,7 +104,6 @@ end
         particle_tid::Vector,
         dataMetrics;
         nMetrics::Union{Nothing,Int}=nothing,
-        verbose=false,
     )
 
 Rank the particles according to their distance from the data in ascending order (first particle is closest).
@@ -122,12 +115,11 @@ function rankParticles(
         distDataVSim::Function,
         particle_tid::Vector,
         dataMetrics::Tuple;
-        # nMetrics::Union{Nothing,Int}=nothing,
-        verbose=false,
+        nMetrics::Union{Nothing,Int}=nothing,
     )
-    # if isnothing(nMetrics) nMetrics=length(dataMetrics) end
-    nMetrics=length(dataMetrics)
-    distance_tid_mid = getParticleDistancesPerMetric(distDataVSim, particle_tid, dataMetrics)
+    if isnothing(nMetrics) nMetrics=length(dataMetrics) end
+    # nMetrics=length(dataMetrics)
+    distance_tid_mid = getParticleDistancesPerMetric(distDataVSim, particle_tid, dataMetrics, nMetrics)
     orderStat_tid_mid = Array{Int,2}(undef, (length(particle_tid),nMetrics))
     # for each metric, sort distances to get order statistic
     for mid in 1:nMetrics
@@ -138,16 +130,10 @@ function rankParticles(
     orderStatMax_tid = maximum(orderStat_tid_mid, dims=2)
     # sort particles by maximum order statistic
     tid_orderStatJoint = sortperm(orderStatMax_tid, dims=1) |> vec
-    if verbose
-        println("distances: distance_tid_mid = ") #! debug
-        display(distance_tid_mid) #! debug
-        println("order of distances: orderStat_tid_mid = ") #! debug
-        display(orderStat_tid_mid) #! debug
-        println("max distance per particle: orderStatMax_tid = ") #! debug
-        display(orderStatMax_tid) #! debug
-        println("order of Max rank: orderStatJoint_tid = ") #! debug
-        display(tid_orderStatJoint) #! debug
-    end
+    @debug "Particle distances by metric" distance_tid_mid
+    @debug "Particle ranks by metric" orderStat_tid_mid
+    @debug "Maximum rank per particle" orderStatMax_tid
+    @debug "Final particle ordering" tid_orderStatJoint
     return tid_orderStatJoint
 end
 
