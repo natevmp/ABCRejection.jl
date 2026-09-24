@@ -124,24 +124,3 @@ function runParticle(runModelSim::Function, pVal_pid, ctrlParams::Union{Tuple, D
         simResults
     )
 end
-
-# function runABC(runModelSim::Function, compareDataVSim::Function, priorDists_pid::NamedTuple, dataMetrics, ctrlParams::Dict, nParticles)
-
-#     particle_tid = runABCParticles(runModelSim, priorDists_pid, nParticles, ctrlParams)
-
-#     accepted_tid = testABCParticles(compareDataVSim, particle_tid, dataMetrics, ctrlParams[:thresholds])
-
-#     return particle_tid, accepted_tid
-# end
-
-# function acceptedParams(particle_tid, accepted_tid)
-#     [particle.paramSet for particle in particle_tid[accepted_tid]]
-# end
-
-# function rankedParams(particle_tid, tid_rank, number::Union{Int,Nothing}=nothing)
-#     if isnothing(number)
-#         return [particle.paramSet for particle in particle_tid[tid_rank]]
-#     else
-#         return [particle.paramSet for particle in particle_tid[tid_rank[1:number]]]
-#     end
-# end

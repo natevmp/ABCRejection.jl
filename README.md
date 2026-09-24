@@ -71,7 +71,7 @@ Use `Particle(paramSet, simResults)` for one existing simulation, or `packPartic
 Instead of using a fixed error threshold, you can rank particles according to their distance from the observed data across multiple metrics.
 
 #### Define your Distance Function
-You must provide a function (e.g., `distDataVSim`) that calculates the distance. `distDataVSim(simResults, dataMetrics)`:
+You must provide a function (e.g., `distanceFunc`) that calculates the distance. `distanceFunc(simResults, dataMetrics)`:
 - `simResults`: The output returned by your `runModelSim` function for a single particle.
 - `dataMetrics`: The observed data or target metrics you are comparing against. If `length(dataMetrics)>1`, (e.g. as a `Tuple` or `Vector`), the data will be compared to multiple metrics, where the number of metrics is equal to `length(dataMetrics)`.
 
@@ -93,6 +93,12 @@ end
 - `algorithm=:sum`: use the sum of the ranks across metrics.
 
 Lower ranks or sums are better. For `:max`, particles with identical sorted rank profiles retain input order. For `:sum`, equal sums retain input order without a secondary tie-breaker. Both algorithms return particle indices rather than changing the particle vector.
+
+Signed zeros (`-0.0` and `0.0`) share a rank, and infinite distances are allowed.
+Particles with `NaN` in any distance are excluded before ranks are computed,
+with one warning listing their positions. The returned indices refer to the
+supplied particle collection and omit excluded particles; if all particles are
+excluded, the result is empty.
 
 ```julia
 dataMetrics = (5.0, 0.2) # Observed mean and std

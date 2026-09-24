@@ -2,8 +2,7 @@ module ABCRejection
 
 using Random: rand
 
-export runABCParticles, runParticle, rankParticles, testABCParticles, testParticle
-export Particle, packParticles
+export Particle, packParticles, runABCParticles, runParticle, rankParticles
 
 include("particles.jl")
 include("ranking.jl")
